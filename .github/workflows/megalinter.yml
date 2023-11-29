@@ -1,6 +1,65 @@
-name: 'Lint'
-on: pull_request
+# MegaLinter GitHub Action configuration file
+# More info at https://megalinter.io
+---
+name: MegaLinter
+
+# Trigger mega-linter at every push. Action will also be visible from Pull
+# Requests to main
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
-  linter:
-    - name: MegaLinter
-      uses: oxsecurity/megalinter@v7.6.0
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+
+    # Give the default GITHUB_TOKEN write permission to commit and push, comment
+    # issues & post new PR; remove the ones you do not need
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      # Git Checkout
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          # token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+
+          # If you use VALIDATE_ALL_CODEBASE = true, you can remove this line to
+          # improve performance
+          fetch-depth: 0
+
+      # MegaLinter
+      - name: MegaLinter
+
+        # You can override MegaLinter flavor used to have faster performances
+        # More info at https://megalinter.io/flavors/
+        uses: oxsecurity/megalinter@v7
+
+        id: ml
+
+        # All available variables are described in documentation
+        # https://megalinter.io/configuration/
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload MegaLinter artifacts
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        if: success() || failure()
+        with:
+          name: MegaLinter reports
+          path: |
+            megalinter-reports
+            mega-linter.log
+
