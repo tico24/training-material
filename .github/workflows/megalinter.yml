@@ -6,3 +6,5 @@ jobs:
     steps:
       - name: MegaLinter
         uses: oxsecurity/megalinter@v7.6.0
+
+#bar
